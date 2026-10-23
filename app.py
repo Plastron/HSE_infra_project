@@ -71,7 +71,7 @@ async def generate_question_from_ai(topic_context: str):
     }
 
     prompt = f"""
-    Ты — преподаватель. На основе следующих тем сгенерируй ОДНУ простую задачу:
+    Ты — преподаватель. Из следующих тем выбери случайную и сгенерируй ОДНУ задачу, для решения которой требуется не более 5 минут:
     {topic_context}
 
     Верни ответ СТРОГО в формате JSON без лишних символов:
@@ -84,9 +84,9 @@ async def generate_question_from_ai(topic_context: str):
     """
 
     payload = {
-        "model": "GigaChat",
+        "model": "GigaChat-3-Ultra",
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
+        "temperature": 0.8,
         "response_format": {
             "type": "json_schema",
             "schema": {
@@ -101,7 +101,7 @@ async def generate_question_from_ai(topic_context: str):
         }
     }
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         response = await client.post(url, headers=headers, json=payload, timeout=30.0)
         if response.status_code != 200:
             logger.error(f"GigaChat error: {response.text}")
