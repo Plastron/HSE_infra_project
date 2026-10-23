@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажер по математике</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .btn { display: block; width: 100%; padding: 15px; background: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 20px; }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        #task-container { display: none; }
+        .task-text { font-size: 18px; margin-bottom: 20px; padding: 15px; background: #eef; border-left: 4px solid #007bff; }
+        .options { display: grid; gap: 10px; }
+        .option { padding: 15px; border: 2px solid #ddd; border-radius: 5px; cursor: pointer; transition: 0.3s; font-size: 16px; background: white; }
+        .option:hover { background: #f0f0f0; }
+        .option.correct { border-color: #28a745; background: #d4edda; color: #155724; font-weight: bold; }
+        .option.wrong { border-color: #dc3545; background: #f8d7da; color: #721c24; }
+        .option.disabled { pointer-events: none; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Тренажер к экзамену</h1>
+        <button id="generate-btn" class="btn">Сгенерировать случайную задачу</button>
+        
+        <div id="task-container">
+            <div id="task-text" class="task-text"></div>
+            <div id="options" class="options"></div>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('generate-btn');
+        const taskContainer = document.getElementById('task-container');
+        const taskText = document.getElementById('task-text');
+        const optionsDiv = document.getElementById('options');
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Генерация... (около 5-10 сек)';
+            taskContainer.style.display = 'none';
+            optionsDiv.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) throw new Error('Ошибка сервера');
+
+                const data = await response.json();
+                
+                taskText.textContent = data.task;
+                
+                data.options.forEach((optText, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'option';
+                    div.textContent = `${index + 1}. ${optText}`;
+                    
+                    div.addEventListener('click', () => {
+                        // Блокируем все кнопки после клика
+                        document.querySelectorAll('.option').forEach(el => el.classList.add('disabled'));
+                        
+                        if (index === data.correct_index) {
+                            div.classList.add('correct');
+                        } else {
+                            div.classList.add('wrong');
+                            // Подсвечиваем правильный ответ
+                            document.querySelectorAll('.option')[data.correct_index].classList.add('correct');
+                        }
+                    });
+                    
+                    optionsDiv.appendChild(div);
+                });
+
+                taskContainer.style.display = 'block';
+            } catch (error) {
+                alert('Ошибка при генерации задачи. Проверьте логи сервера.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Сгенерировать случайную задачу';
+            }
+        });
+    </script>
+</body>
+</html>
